@@ -197,3 +197,5 @@ cython_debug/
 .vscode/
 chroma_db/
 media/
+staticfiles/
+.idea/
