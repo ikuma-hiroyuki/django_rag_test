@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}ホーム - RAGシステム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">RAGシステムへようこそ</h1>
+            <p class="lead">
+                マークダウンファイルをアップロードして、AIとチャットできるシステムです。
+                アップロードしたドキュメントに基づいて、AIが質問に回答します。
+            </p>
+            {% if user.is_authenticated %}
+                <hr class="my-4">
+                <p>ログイン中: {{ user.email }}</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <a class="btn btn-primary btn-lg me-md-2" href="{% url 'documents:list' %}" role="button">
+                        ドキュメント管理
+                    </a>
+                    <a class="btn btn-success btn-lg" href="{% url 'rag:chat' %}" role="button">
+                        チャットを開始
+                    </a>
+                </div>
+            {% else %}
+                <hr class="my-4">
+                <p>システムを利用するにはログインが必要です。</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <a class="btn btn-primary btn-lg me-md-2" href="{% url 'account_login' %}" role="button">
+                        ログイン
+                    </a>
+                    <a class="btn btn-outline-secondary btn-lg" href="{% url 'account_signup' %}" role="button">
+                        サインアップ
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📄 ドキュメント管理</h5>
+                <p class="card-text">マークダウンファイルをアップロードして管理できます。</p>
+                <a href="{% url 'documents:list' %}" class="btn btn-primary">管理画面へ</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">💬 AIチャット</h5>
+                <p class="card-text">アップロードしたドキュメントに基づいてAIと対話できます。</p>
+                <a href="{% url 'rag:chat' %}" class="btn btn-success">チャット開始</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">🔍 検索機能</h5>
+                <p class="card-text">セマンティック検索でドキュメントから関連情報を取得します。</p>
+                <a href="{% url 'rag:chat' %}" class="btn btn-info">検索してみる</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

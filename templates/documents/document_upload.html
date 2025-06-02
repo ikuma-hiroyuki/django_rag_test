@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block title %}ドキュメントアップロード - RAGシステム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">ドキュメントアップロード</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    {% csrf_token %}
+
+                    <!-- ドラッグ&ドロップエリア -->
+                    <div id="drop-zone" class="border border-2 border-dashed rounded p-5 text-center mb-3" style="border-color: #dee2e6;">
+                        <div id="drop-zone-content">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">ファイルをここにドラッグ&ドロップ</h5>
+                            <p class="text-muted mb-3">または</p>
+                            <label for="id_file" class="btn btn-outline-primary">
+                                <i class="fas fa-folder-open"></i> ファイルを選択
+                            </label>
+                            <input type="file" id="id_file" name="file" class="d-none" accept=".md" multiple>
+                        </div>
+                    </div>
+
+                    <!-- 選択されたファイル一覧 -->
+                    <div id="file-list" class="mb-3" style="display: none;">
+                        <h6>選択されたファイル:</h6>
+                        <div id="file-items"></div>
+                    </div>
+
+                    <!-- プログレスバー -->
+                    <div id="upload-progress" class="mb-3" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block" id="progress-text">アップロード中...</small>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle"></i> アップロードについて</h6>
+                        <ul class="mb-0">
+                            <li>マークダウンファイル（.md）のみアップロード可能です</li>
+                            <li>複数ファイルを同時にアップロードできます</li>
+                            <li>ファイル名が自動的にドキュメントのタイトルになります</li>
+                            <li>アップロード後、自動的にベクトル化処理が行われます</li>
+                            <li>処理完了後、チャット機能で質問できるようになります</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'documents:list' %}" class="btn btn-secondary me-md-2">
+                            キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="upload-btn" disabled>
+                            <i class="fas fa-upload"></i> アップロード
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/file_upload.js' %}"></script>
+</script>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}AIチャット - RAGシステム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">
+                    <i class="fas fa-robot"></i> AIチャット
+                </h3>
+                <small>アップロードしたドキュメントに基づいて質問してください</small>
+            </div>
+            <div class="card-body">
+                <!-- チャット履歴表示エリア -->
+                <div id="chat-history" class="border rounded p-3 mb-3" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>チャットを開始してください。アップロードしたドキュメントに関する質問をお待ちしています。</p>
+                    </div>
+                </div>
+
+                <!-- メッセージ入力エリア -->
+                <form id="chat-form">
+                    <div class="input-group">
+                        <input type="text"
+                               id="message-input"
+                               class="form-control"
+                               placeholder="質問を入力してください..."
+                               autocomplete="off">
+                        <button type="submit"
+                                id="send-button"
+                                class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> 送信
+                        </button>
+                    </div>
+                </form>
+
+                <!-- ローディング表示 -->
+                <div id="loading" class="text-center mt-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">回答を生成中...</span>
+                    </div>
+                    <p class="mt-2 text-muted">AIが回答を生成中です...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使い方ガイド -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">使い方ガイド</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-lightbulb text-warning"></i> 効果的な質問のコツ</h6>
+                        <ul>
+                            <li>具体的で明確な質問をしてください</li>
+                            <li>ドキュメントの内容に関連する質問が効果的です</li>
+                            <li>複数の観点から質問してみてください</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle text-info"></i> システムについて</h6>
+                        <ul>
+                            <li>アップロードしたドキュメントのみが検索対象です</li>
+                            <li>セマンティック検索で関連情報を取得します</li>
+                            <li>Gemini 2.0 Flashが回答を生成します</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const chatHistory = document.getElementById('chat-history');
+    const loading = document.getElementById('loading');
+
+    // フォーム送信処理
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // ユーザーメッセージを表示
+        addMessage(message, 'user');
+        messageInput.value = '';
+
+        // ローディング表示
+        showLoading(true);
+
+        try {
+            // APIに送信
+            const response = await fetch('{% url "rag:chat_api" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: message
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // AIの回答を表示
+                addMessage(data.response, 'ai');
+            } else {
+                // エラーメッセージを表示
+                addMessage(data.error || 'エラーが発生しました', 'error');
+            }
+        } catch (error) {
+            addMessage('通信エラーが発生しました', 'error');
+        } finally {
+            showLoading(false);
+        }
+    });
+
+    // メッセージを追加する関数
+    function addMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-3 ${type === 'user' ? 'text-end' : 'text-start'}`;
+
+        let iconClass, bgClass, textClass;
+        if (type === 'user') {
+            iconClass = 'fas fa-user';
+            bgClass = 'bg-primary';
+            textClass = 'text-white';
+        } else if (type === 'ai') {
+            iconClass = 'fas fa-robot';
+            bgClass = 'bg-light';
+            textClass = 'text-dark';
+        } else {
+            iconClass = 'fas fa-exclamation-triangle';
+            bgClass = 'bg-danger';
+            textClass = 'text-white';
+        }
+
+        messageDiv.innerHTML = `
+            <div class="d-inline-block p-3 rounded ${bgClass} ${textClass}" style="max-width: 80%;">
+                <div class="mb-1">
+                    <i class="${iconClass}"></i>
+                    <strong>${type === 'user' ? 'あなた' : type === 'ai' ? 'AI' : 'エラー'}</strong>
+                </div>
+                <div style="white-space: pre-wrap;">${message}</div>
+            </div>
+        `;
+
+        // 初回メッセージの場合、ガイドメッセージを削除
+        if (chatHistory.children.length === 1 && chatHistory.children[0].classList.contains('text-center')) {
+            chatHistory.innerHTML = '';
+        }
+
+        chatHistory.appendChild(messageDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // ローディング表示制御
+    function showLoading(show) {
+        loading.style.display = show ? 'block' : 'none';
+        sendButton.disabled = show;
+        messageInput.disabled = show;
+    }
+
+    // Enterキーでの送信
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
+{% endblock %}

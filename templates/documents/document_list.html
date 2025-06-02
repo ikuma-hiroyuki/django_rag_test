@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}ドキュメント一覧 - RAGシステム{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>ドキュメント一覧</h2>
+    <a href="{% url 'documents:upload' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> 新しいドキュメントをアップロード
+    </a>
+</div>
+
+{% if documents %}
+    <div class="row">
+        {% for document in documents %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ document.title }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                アップロード日時: {{ document.uploaded_at|date:"Y年m月d日 H:i" }}
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <span class="badge {% if document.is_processed %}bg-success{% else %}bg-warning{% endif %}">
+                                {% if document.is_processed %}処理済み{% else %}処理中{% endif %}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal{{ document.pk }}">
+                                削除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 削除確認モーダル -->
+            <div class="modal fade" id="deleteModal{{ document.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ document.pk }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="deleteModalLabel{{ document.pk }}">ドキュメント削除確認</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> 削除の確認</h6>
+                                <p class="mb-0">
+                                    以下のドキュメントを削除しようとしています。
+                                    この操作は取り消すことができません。
+                                </p>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6>削除対象ドキュメント:</h6>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ document.title }}</h6>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                ファイル名: {{ document.file.name }}<br>
+                                                アップロード日時: {{ document.uploaded_at|date:"Y年m月d日 H:i" }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> 削除される内容</h6>
+                                <ul class="mb-0">
+                                    <li>ドキュメントファイル</li>
+                                    <li>ベクトルストア内の関連データ</li>
+                                    <li>メタデータ情報</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                            <form method="post" action="{% url 'documents:delete' document.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> 削除する
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-file-alt fa-5x text-muted"></i>
+        </div>
+        <h4 class="text-muted">ドキュメントがありません</h4>
+        <p class="text-muted">まずはマークダウンファイルをアップロードしてください。</p>
+        <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-lg">
+            ドキュメントをアップロード
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
